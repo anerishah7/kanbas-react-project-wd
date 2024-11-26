@@ -10,6 +10,8 @@ import { FaAlignJustify } from "react-icons/fa6";
 import { addAssignment, updateAssignment, deleteAssignment } from "./Assignments/reducer";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import QuizDetailsScreen from "./Quizzes/QuizDetailsScreen";
+import QuizDetailsEditor from "./Quizzes/QuizDetailEditor";
 
 export default function Courses({ courses }: { courses: any[]; }) {
   const { cid } = useParams();
@@ -41,6 +43,8 @@ export default function Courses({ courses }: { courses: any[]; }) {
                   />}
                   />
               <Route path="Quizzes" element={<Quizzes />} />
+              <Route path="Quizzes/:qid" element={<QuizDetailsScreen />} />
+              <Route path="Quizzes/:qid/Edit" element={<QuizDetailsEditor />} />
               <Route path="People" element={<PeopleTable />} />
             </Routes>
             </div></div>

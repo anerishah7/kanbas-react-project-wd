@@ -42,7 +42,7 @@ export default function Quizzes() {
                       <tr>
                     <Link className="black"
                     // onClick={() => dispatch(setAssignment(assignment))}
-                    to={`/Kanbas/Courses/${cid}/Assignments/${quiz._id}`}
+                    to={`/Kanbas/Courses/${cid}/Quizzes/${quiz._id}`}
                         >
                     {quiz.title}
                     </Link>   
