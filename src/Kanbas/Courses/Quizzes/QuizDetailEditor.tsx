@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
+import { updateQuiz } from './client';
 
 const quizTypes = ['Graded Quiz', 'Practice Quiz', 'Graded Survey', 'Ungraded Survey'];
 const assignmentGroups = ['Quizzes', 'Exams', 'Assignments', 'Project'];
@@ -36,10 +37,24 @@ const QuizDetailsEditor: React.FC = () => {
   const handleInputChange = (field: string, value: any) => {
     setQuiz((prev: any) => ({ ...prev, [field]: value }));
   };
+  const handleSave = async () => {
+    try {
+      // Perform the quiz update
+      await updateQuiz(qid || '', quiz);
 
+      // Navigate on successful update
+      navigate(`/Kanbas/Courses/${cid}/Quizzes/${qid}`);
+    } catch {
+      // Handle different types of errors
+      console.error('Error:');
+    }
+  };
+  const saveQuiz = () => { 
+    handleSave();
+  };
   return (
     <div className="container-fluid mt-4">
-      <div className="card shadow">
+      <div className="card shadow"> 
         <div className="card-header bg-white">
           <ul className="nav nav-tabs card-header-tabs">
             <li className="nav-item">
@@ -257,14 +272,14 @@ const QuizDetailsEditor: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {alert('Save not implemented');}}
+                  onClick={saveQuiz}
                   className="btn btn-primary"
                 >
                   Save
                 </button>
                 <button
                   type="button"
-                  onClick={() => {alert('Save and Publish not implemented');}}
+                  onClick={saveQuiz}
                   className="btn btn-success"
                 >
                   Save & Publish
