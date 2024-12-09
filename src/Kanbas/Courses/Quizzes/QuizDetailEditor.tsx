@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import { updateQuiz } from './client';
-
+import { findQuizById } from './client';
+import Editor from 'react-simple-wysiwyg';
 const quizTypes = ['Graded Quiz', 'Practice Quiz', 'Graded Survey', 'Ungraded Survey'];
 const assignmentGroups = ['Quizzes', 'Exams', 'Assignments', 'Project'];
 
@@ -11,12 +12,11 @@ const assignmentGroups = ['Quizzes', 'Exams', 'Assignments', 'Project'];
 const QuizDetailsEditor: React.FC = () => {
   const { qid } = useParams();
   const { cid } = useParams();
-  const { quizzes } = useSelector((state: any) => state.quizzesReducer);
-  const foundQuiz = quizzes.find((quiz: any) => quiz._id === qid);
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('details');
-  const [quiz, setQuiz] = useState(foundQuiz || {
+  const [quiz, setQuiz] = useState({
+    _id: '',
     title: '',
+    howManyQuestions: 0,
+    description: '',
     quizType: 'Graded Quiz',
     points: 0,
     assignmentGroup: 'Quizzes',
@@ -31,9 +31,17 @@ const QuizDetailsEditor: React.FC = () => {
     lockQuestionsAfterAnswering: false,
     dueDate: '',
     availableDate: '',
-    untilDate: ''
-  });
-
+    untilDate: ''});
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      const quiz = await findQuizById(qid || '');
+      setQuiz(quiz);
+    };
+    fetchQuiz();
+  }, [qid]);
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('details');
+  
   const handleInputChange = (field: string, value: any) => {
     setQuiz((prev: any) => ({ ...prev, [field]: value }));
   };
@@ -43,14 +51,20 @@ const QuizDetailsEditor: React.FC = () => {
       await updateQuiz(qid || '', quiz);
 
       // Navigate on successful update
-      navigate(`/Kanbas/Courses/${cid}/Quizzes/${qid}`);
+      
     } catch {
       // Handle different types of errors
       console.error('Error:');
     }
+    
   };
   const saveQuiz = () => { 
     handleSave();
+    navigate(`/Kanbas/Courses/${cid}/Quizzes/${qid}`);
+  };
+  const saveAndPublishQuiz = () => { 
+    handleSave();
+    navigate(`/Kanbas/Courses/${cid}/Quizzes`);
   };
   return (
     <div className="container-fluid mt-4">
@@ -89,7 +103,32 @@ const QuizDetailsEditor: React.FC = () => {
                   onChange={(e) => handleInputChange('title', e.target.value)}
                 />
               </div>
-
+              <div className="mb-3">
+                <label className="form-label">Description</label>
+                <Editor
+                  value={quiz.description}
+                  onChange={(e: any) => handleInputChange('description', e.target.value)}
+                  containerProps={{
+                    style: { minHeight: "100px" },
+                    className: "form-control"
+                  }}
+                  aria-label="Quiz description editor"
+                />
+              </div>
+              <div className="mb-3">
+                <div className="form-check mb-2">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="multipleAttempts"
+                    checked={quiz.multipleAttempts}
+                    onChange={(e) => handleInputChange('multipleAttempts', e.target.checked)}
+                  />
+                  <label className="form-check-label" htmlFor="multipleAttempts">
+                    Allow Multiple Attempts
+                  </label>
+                </div>
+              </div>
               <div className="row mb-3">
                 <div className="col-md-6">
                   <label className="form-label">Quiz Type</label>
@@ -124,7 +163,7 @@ const QuizDetailsEditor: React.FC = () => {
                   <input
                     type="number"
                     className="form-control"
-                    value={quiz.timeLimit}
+                    value={quiz.timeLimit || 20}
                     onChange={(e) => handleInputChange('timeLimit', parseInt(e.target.value))}
                   />
                 </div>
@@ -133,7 +172,7 @@ const QuizDetailsEditor: React.FC = () => {
                   <input
                     type="number"
                     className="form-control"
-                    value={quiz.points}
+                    value={quiz.points || 20}
                     onChange={(e) => handleInputChange('points', parseInt(e.target.value))}
                   />
                 </div>
@@ -173,7 +212,7 @@ const QuizDetailsEditor: React.FC = () => {
                       type="number"
                       className="form-control"
                       style={{ width: '120px' }}
-                      value={quiz.numberOfAttempts}
+                      value={quiz.numberOfAttempts || 1 }
                       onChange={(e) => handleInputChange('numberOfAttempts', parseInt(e.target.value))}
                       min={1}
                     />
@@ -265,7 +304,7 @@ const QuizDetailsEditor: React.FC = () => {
               <div className="d-flex justify-content-end gap-2 border-top pt-3">
                 <button
                   type="button"
-                  onClick={() => {navigate(`/Kanbas/Courses/${cid}/Quizzes/${qid}`);}}
+                  onClick={() => {navigate(`/Kanbas/Courses/${cid}/Quizzes`);}}
                   className="btn btn-secondary"
                 >
                   Cancel
@@ -279,7 +318,7 @@ const QuizDetailsEditor: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={saveQuiz}
+                  onClick={saveAndPublishQuiz}
                   className="btn btn-success"
                 >
                   Save & Publish
