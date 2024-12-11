@@ -2,70 +2,57 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
-import { updateQuiz } from './client';
-import { findQuizById } from './client';
+import { useDispatch } from 'react-redux';
+import { fetchQuizById, clearCurrentQuiz, updateQuizField, updateQuiz } from './reducer';
+import { Quiz } from './reducer';
 import Editor from 'react-simple-wysiwyg';
+import { RootState } from './types';
 const quizTypes = ['Graded Quiz', 'Practice Quiz', 'Graded Survey', 'Ungraded Survey'];
 const assignmentGroups = ['Quizzes', 'Exams', 'Assignments', 'Project'];
-
-
 const QuizDetailsEditor: React.FC = () => {
-  const { qid } = useParams();
-  const { cid } = useParams();
-  const [quiz, setQuiz] = useState({
-    _id: '',
-    title: '',
-    howManyQuestions: 0,
-    description: '',
-    quizType: 'Graded Quiz',
-    points: 0,
-    assignmentGroup: 'Quizzes',
-    shuffleAnswers: true,
-    timeLimit: 20,
-    multipleAttempts: false,
-    numberOfAttempts: 1,
-    showCorrectAnswers: true,
-    accessCode: '',
-    oneQuestionAtATime: true,
-    webcamRequired: false,
-    lockQuestionsAfterAnswering: false,
-    dueDate: '',
-    availableDate: '',
-    untilDate: ''});
-  useEffect(() => {
-    const fetchQuiz = async () => {
-      const quiz = await findQuizById(qid || '');
-      setQuiz(quiz);
-    };
-    fetchQuiz();
-  }, [qid]);
+  const { qid, cid } = useParams();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('details');
   
-  const handleInputChange = (field: string, value: any) => {
-    setQuiz((prev: any) => ({ ...prev, [field]: value }));
+  // Access the state from the updated slice
+  const quiz = useSelector((state: any) => state.quizzesReducer.currentQuiz);
+  const loading = useSelector((state: any) => state.quizzesReducer.loading);
+  const error = useSelector((state: any) => state.quizzesReducer.error);  const [activeTab, setActiveTab] = useState('details');
+  useEffect(() => {
+    if (qid) {
+      dispatch<any>(fetchQuizById(qid));
+    }
+    return () => {
+      dispatch<any>(clearCurrentQuiz());
+    };
+  }, [qid, dispatch]);
+  const handleInputChange = (field: keyof Quiz, value: any) => {
+    dispatch(updateQuizField({ field, value }));
   };
+
   const handleSave = async () => {
     try {
-      // Perform the quiz update
-      await updateQuiz(qid || '', quiz);
-
-      // Navigate on successful update
-      
-    } catch {
-      // Handle different types of errors
-      console.error('Error:');
+      if (quiz) {
+        dispatch(updateQuiz(quiz));
+      }
+    } catch (error) {
+      console.error('Error saving quiz:', error);
     }
-    
   };
-  const saveQuiz = () => { 
+
+  const saveQuiz = () => {
     handleSave();
     navigate(`/Kanbas/Courses/${cid}/Quizzes/${qid}`);
   };
-  const saveAndPublishQuiz = () => { 
+
+  const saveAndPublishQuiz = () => {
     handleSave();
     navigate(`/Kanbas/Courses/${cid}/Quizzes`);
   };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!quiz) return <div>No quiz found</div>;
   return (
     <div className="container-fluid mt-4">
       <div className="card shadow"> 
@@ -266,7 +253,7 @@ const QuizDetailsEditor: React.FC = () => {
                     type="datetime-local"
                     className="form-control"
                     value={quiz.dueDate}
-                    onChange={(e) => handleInputChange('dueDate', e.target.value)}
+                    onChange={(e) => handleInputChange('dueDate' as keyof Quiz, e.target.value)}
                   />
                 </div>
                 <div className="col-md-6">
